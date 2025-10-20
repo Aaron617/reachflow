@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B1020"/>
+      <stop offset="50%" stop-color="#1A2A55"/>
+      <stop offset="100%" stop-color="#1BBF72"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2F6FED"/>
+      <stop offset="100%" stop-color="#1BBF72"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g fill="#FFFFFF" opacity="0.12">
+    <circle cx="240" cy="160" r="120"/>
+    <circle cx="960" cy="520" r="160"/>
+  </g>
+  <g font-family="Inter, 'Noto Sans CJK SC', sans-serif" fill="#FFFFFF">
+    <text x="100" y="180" font-size="52" font-weight="700">联脉 ReachFlow</text>
+    <text x="100" y="260" font-size="38" font-weight="600">找到对的人，24 小时内让他看到你</text>
+    <text x="100" y="320" font-size="24" opacity="0.85">
+      可达验证｜多通道触达｜全链路合规
+    </text>
+  </g>
+  <rect x="100" y="380" width="420" height="96" rx="48" fill="url(#accent)" opacity="0.95"/>
+  <text x="140" y="442" font-size="30" font-weight="600" fill="#FFFFFF">立即获取首批可联对象</text>
+</svg>

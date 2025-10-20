@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>联脉｜AI 找人与可达验证，一键触达关键联系人</title>
+    <meta
+      name="description"
+      content="用 AI 精准识别关键联系人，补全邮箱/电话/表单/社媒入口，并验证可达性；适用于外贸获客、影响者投放、招聘寻源、公关传播。"
+    />
+    <meta property="og:title" content="联脉｜AI 找人与可达验证，一键触达关键联系人" />
+    <meta
+      property="og:description"
+      content="用 AI 精准识别关键联系人，补全邮箱/电话/表单/社媒入口，并验证可达性；适用于外贸获客、影响者投放、招聘寻源、公关传播。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/og-image.svg" />
+    <meta name="theme-color" content="#2F6FED" />
+    <link rel="icon" type="image/png" href="assets/icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app" class="page">
+      <header class="site-header">
+        <div class="container header-inner">
+          <div class="brand">
+            <img class="brand-logo" src="assets/icon.png" alt="" aria-hidden="true" />
+            <div class="brand-text">
+              <span class="brand-name">联脉</span>
+              <span class="brand-sub">ReachFlow</span>
+            </div>
+          </div>
+          <nav class="site-nav">
+            <a href="#workflow">工作流</a>
+            <a href="#scenarios">应用场景</a>
+            <a href="#pricing">价格</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <div class="header-cta">
+            <button class="btn btn-outline" data-track="demo_request" data-secondary-cta>
+              预约 Demo
+            </button>
+            <button class="btn btn-primary" data-track="cta_click_hero">
+              获取首批联系人
+            </button>
+          </div>
+          <button class="nav-toggle" aria-label="打开菜单">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero" id="hero">
+          <div class="hero-bg"></div>
+          <div class="container hero-grid">
+            <div class="hero-content">
+              <p class="hero-kicker">AI 外联引擎</p>
+              <h1>联脉｜找到对的人，24 小时内让他看到你</h1>
+              <p class="hero-subtitle">
+                用 AI 精准识别企业关键联系人，补全多通道触达方式，并验证可达性。一键外联，拒绝盲打骚扰。
+              </p>
+              <div class="hero-badges">
+                <span class="badge">覆盖场景：外贸获客｜影响者投放｜招聘寻源｜公关传播</span>
+                <span class="badge">可达验证：邮箱投递/电话有效/渠道属性</span>
+                <span class="badge">合规守护：仅使用公开数据｜拒联名录｜全链路审计</span>
+              </div>
+              <div class="hero-proof">
+                <p>
+                  承诺：T+24 小时返回 3–5 位可联对象（含可达评分与触达路径）
+                </p>
+                <div class="hero-trust hero-trust-logos" aria-hidden="true">
+                  <div class="logo-wall">
+                    <span class="logo-placeholder">Logo A</span>
+                    <span class="logo-placeholder">Logo B</span>
+                    <span class="logo-placeholder">Logo C</span>
+                    <span class="logo-placeholder">Logo D</span>
+                    <span class="logo-placeholder">Logo E</span>
+                    <span class="logo-placeholder">Logo F</span>
+                  </div>
+                </div>
+                <div class="hero-trust hero-trust-metrics hidden" aria-hidden="true">
+                  <span class="badge">首触达成功率 +45%</span>
+                  <span class="badge">退订率 ≤1%</span>
+                  <span class="badge">验证轨迹 100% 可查</span>
+                </div>
+              </div>
+            </div>
+            <aside class="hero-form-card" aria-label="获取首批联系人表单">
+              <h2>立即获取首批联系人</h2>
+              <form id="hero-form" novalidate>
+                <div class="input-group">
+                  <label for="company-name">公司名称 *</label>
+                  <input
+                    type="text"
+                    id="company-name"
+                    name="company"
+                    required
+                    placeholder="请输入公司全称"
+                  />
+                  <p class="input-hint">我们将结合公开信息补全组织图谱</p>
+                </div>
+                <div class="input-group">
+                  <label for="contact-info">联系方式（工作邮箱 / 微信） *</label>
+                  <input
+                    type="text"
+                    id="contact-info"
+                    name="contact"
+                    required
+                    placeholder="example@company.com / 微信号"
+                  />
+                  <p class="input-error" data-error-for="contact"></p>
+                </div>
+                <div class="input-group">
+                  <label for="use-case">使用场景 *</label>
+                  <select id="use-case" name="useCase" required>
+                    <option value="">请选择使用场景</option>
+                    <option value="外贸">外贸</option>
+                    <option value="投放">投放</option>
+                    <option value="招聘">招聘</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="target-market">目标国家 / 行业（可选）</label>
+                  <input
+                    type="text"
+                    id="target-market"
+                    name="target"
+                    placeholder="例如：北美电商 / B2B SaaS"
+                  />
+                </div>
+                <div class="input-group hidden" data-variant-field="extended">
+                  <label for="lead-volume">预估月外联量（可选）</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    id="lead-volume"
+                    name="volume"
+                    placeholder="例如：50"
+                  />
+                  <p class="input-hint">帮助我们提供更精准的配额与频控建议。</p>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">提交</button>
+                <p class="form-footnote">
+                  提交后我们将在 24 小时内邮件或微信联系你。
+                </p>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="pain-solution">
+          <div class="container">
+            <div class="section-header">
+              <h2>线索分散、触达困难、合规风险？我们一次解决</h2>
+              <p>直面现状痛点，联脉以可解释流程交付可达线索。</p>
+            </div>
+            <div class="cards triple">
+              <article class="card">
+                <h3>线索分散 → 定位关键人难</h3>
+                <p>官网、社媒、活动、企业库信息割裂，难以识别真正能决策的人。</p>
+              </article>
+              <article class="card">
+                <h3>联系方式不可靠 → 触达成本高</h3>
+                <p>退信、停机、表单无回复，浪费时间与预算，团队外联效率低。</p>
+              </article>
+              <article class="card">
+                <h3>合规风险 → 品牌受损</h3>
+                <p>无授权抓取、频繁打扰、缺乏退订机制，易触发投诉与罚款。</p>
+              </article>
+            </div>
+            <div class="highlight callout">
+              <strong>我们的方式：</strong> 可解释 AI 流程把“找谁—怎么联系—是否能达”一次解决。
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="workflow">
+          <div class="container">
+            <div class="section-header">
+              <h2>三步工作流，从目标锁定到合规触达</h2>
+            </div>
+            <ol class="workflow">
+              <li>
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h3>目标对象发现</h3>
+                  <p>
+                    输入公司名、岗位或领域标签，自动识别企业内部最合适的联系人（市场总监、HR、CEO…）。
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h3>联系方式补全 &amp; 可达验证</h3>
+                  <p>
+                    补全邮箱、电话、官网表单、社媒入口；验证投递性、有效性、渠道属性，输出可达评分。
+                  </p>
+                </div>
+              </li>
+              <li>
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h3>一键外联与编排</h3>
+                  <p>
+                    生成个性化外联文案（支持多语言），邮箱/表单/社媒并行发送，自动去重与频控。
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" id="scenarios">
+          <div class="container">
+            <div class="section-header">
+              <div>
+                <h2>三大优先场景</h2>
+                <p>覆盖外贸、影响者投放、招聘寻源，立即启用可达触达工具。</p>
+              </div>
+              <div class="section-actions">
+                <button class="btn btn-outline" data-modal-open="template-modal">
+                  查看样例外联文案
+                </button>
+              </div>
+            </div>
+            <div class="scenario-tabs" role="tablist">
+              <button class="scenario-tab active" role="tab" data-scenario="外贸">
+                外贸跨境电商
+              </button>
+              <button class="scenario-tab" role="tab" data-scenario="投放">
+                影响者投放 / 代理
+              </button>
+              <button class="scenario-tab" role="tab" data-scenario="招聘">
+                招聘 / 猎头服务
+              </button>
+            </div>
+            <div class="scenario-panels">
+              <article class="scenario-panel active" data-panel="外贸">
+                <h3>外贸跨境电商</h3>
+                <ul>
+                  <li>锁定买家、分销商、退货负责人。</li>
+                  <li>提供多语言模板与时区投递建议。</li>
+                  <li>显著提升首触达成功率。</li>
+                </ul>
+              </article>
+              <article class="scenario-panel" data-panel="投放">
+                <h3>影响者投放 / 代理</h3>
+                <ul>
+                  <li>识别博主、MCN、平台商务的合适窗口。</li>
+                  <li>账号与“商务联系”自动映射。</li>
+                  <li>结合投放记录、画像筛选优先级。</li>
+                </ul>
+              </article>
+              <article class="scenario-panel" data-panel="招聘">
+                <h3>招聘 / 猎头服务</h3>
+                <ul>
+                  <li>补全被动候选人、推荐人、导师触达方式。</li>
+                  <li>提供职业邮箱、LinkedIn、校友网络入口。</li>
+                  <li>减少冷启回绝，提高候选响应率。</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="capabilities">
+          <div class="container">
+            <div class="section-header">
+              <h2>关键能力，兼顾可解释与合规</h2>
+              <button class="link-button" data-drawer-open="compliance-drawer">
+                了解合规细则
+              </button>
+            </div>
+            <div class="capability-grid">
+              <article>
+                <h3>精准识别</h3>
+                <p>组织图谱与角色优先级模型直达“能拍板的人”。</p>
+              </article>
+              <article>
+                <h3>多通道补全</h3>
+                <p>邮箱、电话、官网表单、社媒入口一键同步。</p>
+              </article>
+              <article>
+                <h3>可达评分</h3>
+                <p>投递性、有效性、渠道属性结合预测 7/14/30 天触达概率。</p>
+              </article>
+              <article>
+                <h3>可解释流程</h3>
+                <p>来源链接、验证轨迹、外联日志完整可导出，形成证据链。</p>
+              </article>
+              <article>
+                <h3>合规风控</h3>
+                <p>仅用公开数据，拒联名录 + 频控，全链路审计。</p>
+              </article>
+              <article>
+                <h3>系统集成</h3>
+                <p>同步 CRM、ATS、表格、API，状态回写闭环线索。</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="metrics">
+          <div class="container">
+            <div class="section-header">
+              <h2>指标与 SLA，给你可验证的信任</h2>
+            </div>
+            <div class="metrics-grid">
+              <div class="metric">
+                <span class="metric-value">T+24h</span>
+                <p>首批 3–5 位可联对象（含评分与路径）</p>
+              </div>
+              <div class="metric">
+                <span class="metric-value">30–60%</span>
+                <p>首触达成功率提升区间（视行业/地区）</p>
+              </div>
+              <div class="metric">
+                <span class="metric-value">≤1%</span>
+                <p>退订/投诉控制目标（频控 + 拒联名录）</p>
+              </div>
+              <div class="metric">
+                <span class="metric-value">100%</span>
+                <p>联系人均附来源与验证轨迹</p>
+              </div>
+            </div>
+            <p class="metrics-note">数据基于内测区间，视行业与地区而定。</p>
+          </div>
+        </section>
+
+        <section class="section" id="testimonials">
+          <div class="container">
+            <div class="section-header">
+              <h2>客户怎么说</h2>
+            </div>
+            <div class="quotes">
+              <blockquote>
+                <p>
+                  “过去我们花三周摸到关键人，现在 48 小时内就能对上话。”
+                </p>
+                <footer>—— 跨境电商 BD 负责人</footer>
+              </blockquote>
+              <blockquote>
+                <p>
+                  “投放团队最怕退信和石沉大海，联脉让线索不再‘冷’。”
+                </p>
+                <footer>—— 某 MCN 商务总监</footer>
+              </blockquote>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="pricing">
+          <div class="container">
+            <div class="section-header">
+              <div>
+                <h2>价格与方案</h2>
+                <p>按团队成长阶段定制订阅与用量，请联系顾问获取专属报价。</p>
+              </div>
+              <button class="btn btn-secondary" data-track="pricing_select">联系销售</button>
+            </div>
+            <div class="pricing-grid">
+              <article class="pricing-card highlight">
+                <h3>定制化订阅方案</h3>
+                <p>
+                  我们会基于团队规模、外联场景与风险要求，组合席位、验证用量与合规模块，为你提供最佳方案建议。
+                </p>
+                <ul>
+                  <li>席位与验证额度可灵活增减</li>
+                  <li>可选 CRM/ATS 回写、审计与数据驻留能力</li>
+                  <li>顾问协助 Demo、试用与落地部署</li>
+                </ul>
+                <button class="btn btn-primary w-full" data-track="pricing_select">
+                  与销售沟通
+                </button>
+              </article>
+            </div>
+            <div class="note">
+              <p>留下联系方式，我们将在 24 小时内提供报价、试用与部署建议。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section faq" id="faq">
+          <div class="container">
+            <div class="section-header">
+              <h2>常见问题</h2>
+              <p>合规、来源、可达、接入问题一次讲清。</p>
+            </div>
+            <div class="accordion">
+              <details>
+                <summary>数据来源？会侵犯隐私吗？</summary>
+                <p>
+                  我们仅使用公开与合规渠道（官网、公开名录、企业数据库、公开社媒入口等），不处理受保护的私人数据。
+                </p>
+              </details>
+              <details>
+                <summary>如何避免骚扰？</summary>
+                <p>
+                  内置频控与拒联名录，支持退订链接与合规文案，保障触达策略不超频、不冒进。
+                </p>
+              </details>
+              <details>
+                <summary>邮箱验证会误伤吗？</summary>
+                <p>
+                  多信号交叉与灰度提示提供二次确认建议，并保留原始验证轨迹供复核。
+                </p>
+              </details>
+              <details>
+                <summary>如何接入现有系统？</summary>
+                <p>
+                  支持 CRM、ATS、表格对接与 API，企业合规方案包含审计、权限、数据驻留能力。
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <section class="bottom-cta" id="bottom-cta">
+          <div class="container bottom-cta-inner">
+            <div class="cta-text">
+              <h2>把冷线索变“可达对话”，从今天开始</h2>
+              <p>联脉让外联更高效、更合规、更具可验证性。</p>
+              <div class="cta-buttons">
+                <button class="btn btn-primary" data-track="cta_click_hero">
+                  立即获取首批联系人
+                </button>
+                <button class="btn btn-secondary" data-track="demo_request" data-secondary-cta>
+                  预约 15 分钟 Demo
+                </button>
+              </div>
+            </div>
+            <div class="cta-contact">
+              <div class="qr-placeholder" aria-label="企业微信二维码占位"></div>
+              <ul>
+                <li>商务邮箱：<a href="mailto:business@reachflow.ai">business@reachflow.ai</a></li>
+                <li>电话：400-XXXX-XXX</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container footer-grid">
+          <div>
+            <div class="brand">
+              <span class="brand-logo" aria-hidden="true">联脉</span>
+              <div class="brand-text">
+                <span class="brand-name">联脉</span>
+                <span class="brand-sub">ReachFlow</span>
+              </div>
+            </div>
+            <p class="footer-copy">
+              找到对的人，24 小时内让他看到你。AI 驱动的可达触达引擎，为外贸、投放、招聘、公关团队提供可解释的证据链。
+            </p>
+          </div>
+          <div>
+            <h4>合规与资源</h4>
+            <ul>
+              <li><a href="#" aria-label="隐私政策占位">隐私政策（占位）</a></li>
+              <li><a href="#" aria-label="用户协议占位">用户协议（占位）</a></li>
+              <li><a href="#" aria-label="信息安全白皮书占位">信息安全白皮书（占位）</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>联系我们</h4>
+            <ul>
+              <li><a href="mailto:business@reachflow.ai">business@reachflow.ai</a></li>
+              <li>商务电话：400-XXXX-XXX</li>
+            </ul>
+          </div>
+          <div>
+            <h4>备案信息</h4>
+            <p>ICP备案号占位｜公安备案图标位</p>
+          </div>
+        </div>
+        <p class="footer-bottom">© 联脉 ReachFlow. All rights reserved.</p>
+      </footer>
+    </div>
+
+    <div class="modal" id="template-modal" aria-hidden="true" role="dialog">
+      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-content" role="document">
+        <header>
+          <h3>样例外联文案</h3>
+          <button class="icon-button" data-modal-close aria-label="关闭">×</button>
+        </header>
+        <div class="modal-body">
+          <nav class="modal-tabs">
+            <button class="modal-tab active" data-template="外贸">外贸（英文）</button>
+            <button class="modal-tab" data-template="投放">投放（中文）</button>
+            <button class="modal-tab" data-template="招聘">招聘（中文）</button>
+          </nav>
+          <article class="template-panel active" data-template-panel="外贸">
+            <h4>Subject: Quick intro — potential distributor for [Your Product] in [Region]</h4>
+            <p>
+              Hi [Name],<br />
+              We help brands like [Peer Brand] grow in [Region]. I’d love to reach the right person for distribution or returns. If you’re the best contact, could we set up a quick call this week? Otherwise, I’d appreciate a referral.<br />
+              — [Your Name], [Company], [Contact]
+            </p>
+          </article>
+          <article class="template-panel" data-template-panel="投放">
+            <p>
+              你好 [称呼]，我们在 [品类/人群] 做投放，想与贵方沟通 [账号/MCN/平台商务] 的合作机会。本周可安排 15 分钟电话吗？若非您负责，烦请指引对接同事，感谢！
+            </p>
+          </article>
+          <article class="template-panel" data-template-panel="招聘">
+            <p>
+              你好 [候选人名]，我在 [公司] 负责 [职位名称] 的寻访，看到你在 [技能/项目] 方面的经历很契合。若愿意交换更多信息，可约 15 分钟初步沟通；若你更适合作为推荐人，也十分感谢指点。
+            </p>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <aside class="drawer" id="compliance-drawer" aria-hidden="true">
+      <div class="drawer-backdrop" data-drawer-close></div>
+      <div class="drawer-panel" role="dialog">
+        <header>
+          <h3>合规细则摘要</h3>
+          <button class="icon-button" data-drawer-close aria-label="关闭">×</button>
+        </header>
+        <div class="drawer-body">
+          <ul>
+            <li><strong>数据来源：</strong>仅使用公开渠道（官网、名录、公开社媒等），不处理私人受保护数据。</li>
+            <li><strong>拒联名录：</strong>企业级黑名单同步，支持客户自定义导入。</li>
+            <li><strong>退订机制：</strong>所有触达模板内嵌退订说明与链接。</li>
+            <li><strong>频控策略：</strong>多渠道节奏控制，保障不重复打扰。</li>
+            <li><strong>审计记录：</strong>外联日志、验证轨迹、操作审计可导出。</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <div class="toast" id="form-toast" role="status" aria-live="polite"></div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
