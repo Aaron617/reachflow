@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>联脉 Research｜AI 背调实验台（内测）</title>
+    <meta
+      name="description"
+      content="联脉 Research 内测版，仅保留聊天窗口，验证 Deep Research Agent 背调结果。"
+    />
+    <meta property="og:title" content="联脉 Research｜AI 背调实验台（内测）" />
+    <meta property="og:description" content="输入问题，快速获取外贸买家/合作方的背景洞察。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/og-image.svg" />
+    <meta name="theme-color" content="#2F6FED" />
+    <link rel="icon" type="image/png" href="assets/icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="research" data-api-base-url="http://127.0.0.1:8000">
+    <div class="page">
+      <header class="site-header minimal">
+        <div class="container header-inner">
+          <a class="brand" href="/">
+            <img class="brand-logo" src="assets/icon.png" alt="联脉" />
+            <div class="brand-text">
+              <span class="brand-name">联脉</span>
+              <span class="brand-sub">ReachFlow</span>
+            </div>
+          </a>
+          <div class="header-cta">
+            <a class="btn btn-outline" href="/" data-track="research_back_home">返回首页</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="research-chat" id="chat">
+          <div class="container">
+            <div class="chat-card">
+              <header class="chat-header">
+                <div>
+                  <p class="chat-kicker">AI 背调实验台 · 内测</p>
+                  <h1>一个窗口，完成对外贸买家的 AI 背调</h1>
+                </div>
+                <div class="chat-config">
+                  <label class="chat-provider">
+                    Provider
+                    <select id="research-provider" name="provider">
+                      <option value="openai" selected>OpenAI</option>
+                      <option value="anthropic">Anthropic</option>
+                      <option value="gemini">Gemini</option>
+                    </select>
+                  </label>
+                  <button
+                    class="chat-advanced-toggle"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="research-advanced"
+                    data-track="research_toggle_advanced"
+                  >
+                    高级设置
+                  </button>
+                </div>
+              </header>
+
+              <div class="chat-messages" id="chat-messages" aria-live="polite">
+                <div class="chat-message bot" data-static="true">
+                  <div class="chat-meta">系统提示</div>
+                  <div class="chat-bubble">
+                    <p>输入客户背景/公司信息/所需确认的问题，我会调用 Deep Research Agent 并返回可执行的 Markdown 报告。</p>
+                  </div>
+                </div>
+              </div>
+
+              <form id="research-form" class="chat-input" novalidate>
+                <textarea
+                  id="research-query"
+                  name="query"
+                  rows="4"
+                  required
+                  placeholder="例：请帮我评估 ABC Imports（德国慕尼黑）近 12 个月的舆情、核心联系人，以及可能的合规风险。"
+                ></textarea>
+                <div class="chat-input-row">
+                  <button type="submit" class="btn btn-primary" data-track="research_submit">发送</button>
+                  <button type="button" class="btn btn-secondary" data-clear-chat data-track="research_clear_chat">
+                    清空记录
+                  </button>
+                </div>
+
+                <div class="research-advanced hidden" id="research-advanced">
+                  <div class="input-group">
+                    <label for="research-api-key">Provider API Key（可选）</label>
+                    <input
+                      type="password"
+                      id="research-api-key"
+                      name="apiKey"
+                      placeholder="留空使用后端默认配置"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <div class="input-group">
+                    <label for="research-model">模型名称（可选）</label>
+                    <input type="text" id="research-model" name="model" placeholder="例如：gpt-4o-mini" />
+                  </div>
+                  <div class="input-group">
+                    <label for="research-base-url">OpenAI Base URL（可选）</label>
+                    <input type="url" id="research-base-url" name="openai_base_url" placeholder="如需自建代理" />
+                  </div>
+                  <div class="input-group">
+                    <label for="research-exa-key">EXA API Key（可选）</label>
+                    <input type="password" id="research-exa-key" name="exa_api_key" placeholder="覆盖后端默认 Key" />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container">
+          <p>© <span id="footer-year"></span> 联脉 ReachFlow · 内测版本</p>
+        </div>
+      </footer>
+    </div>
+
+    <div class="toast" id="form-toast" role="status" aria-live="polite"></div>
+
+    <script>
+      window.__RESEARCH_CONFIG__ = window.__RESEARCH_CONFIG__ || {};
+      window.__RESEARCH_CONFIG__.apiBaseUrl =
+        document.body.dataset.apiBaseUrl || window.__RESEARCH_CONFIG__.apiBaseUrl || "http://127.0.0.1:8000";
+    </script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

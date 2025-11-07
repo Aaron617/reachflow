@@ -9,6 +9,11 @@ const select = (selector, scope = document) => scope.querySelector(selector);
 const selectAll = (selector, scope = document) =>
   Array.from(scope.querySelectorAll(selector));
 
+const toggleHidden = (element, shouldHide = true) => {
+  if (!element) return;
+  element.classList.toggle("hidden", shouldHide);
+};
+
 const applyABVariants = () => {
   const params = new URLSearchParams(window.location.search);
   if (![...params.keys()].some((key) => key.startsWith("ab_"))) return;
@@ -314,6 +319,343 @@ const faqTracker = () => {
   });
 };
 
+const smoothScrollTriggers = () => {
+  selectAll("[data-scroll-target]").forEach((trigger) => {
+    const targetSelector = trigger.dataset.scrollTarget;
+    if (!targetSelector) return;
+
+    trigger.addEventListener("click", (event) => {
+      const target = select(targetSelector);
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+};
+
+const escapeHTML = (text = "") =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const inlineMarkdown = (text = "") =>
+  text
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/\[(.+?)\]\((https?:[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+const markdownToHTML = (markdown = "") => {
+  const escaped = escapeHTML(markdown);
+  const lines = escaped.split(/\r?\n/);
+  let html = "";
+  let inUl = false;
+  let inOl = false;
+
+  const closeLists = () => {
+    if (inUl) {
+      html += "</ul>";
+      inUl = false;
+    }
+    if (inOl) {
+      html += "</ol>";
+      inOl = false;
+    }
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      closeLists();
+      return;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      closeLists();
+      const level = headingMatch[1].length;
+      html += `<h${level}>${inlineMarkdown(headingMatch[2])}</h${level}>`;
+      return;
+    }
+
+    const ulMatch = trimmed.match(/^[-*+]\s+(.*)$/);
+    if (ulMatch) {
+      if (!inUl) {
+        closeLists();
+        html += "<ul>";
+        inUl = true;
+      }
+      html += `<li>${inlineMarkdown(ulMatch[1])}</li>`;
+      return;
+    }
+
+    const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (olMatch) {
+      if (!inOl) {
+        closeLists();
+        html += "<ol>";
+        inOl = true;
+      }
+      html += `<li>${inlineMarkdown(olMatch[1])}</li>`;
+      return;
+    }
+
+    if (/^>\s+/.test(trimmed)) {
+      closeLists();
+      html += `<blockquote>${inlineMarkdown(trimmed.replace(/^>\s+/, ""))}</blockquote>`;
+      return;
+    }
+
+    closeLists();
+    html += `<p>${inlineMarkdown(trimmed)}</p>`;
+  });
+
+  closeLists();
+  return html || `<p>${escapeHTML(markdown)}</p>`;
+};
+
+const setFooterYear = () => {
+  const yearEl = select("#footer-year");
+  if (yearEl) {
+    yearEl.textContent = String(new Date().getFullYear());
+  }
+};
+
+const initResearchPage = () => {
+  if (document.body.dataset.page !== "research") return;
+
+  const STORAGE_KEY = "reachflow_research_chat_history";
+  const getApiBaseUrl = () => {
+    const fromConfig = window.__RESEARCH_CONFIG__?.apiBaseUrl || document.body.dataset.apiBaseUrl || "";
+    return fromConfig.replace(/\/$/, "");
+  };
+
+  const form = select("#research-form");
+  if (!form) return;
+
+  const messagesEl = select("#chat-messages");
+  const queryInput = select("#research-query", form);
+  const providerSelect = select("#research-provider", form);
+  const apiKeyInput = select("#research-api-key", form);
+  const modelInput = select("#research-model", form);
+  const baseUrlInput = select("#research-base-url", form);
+  const exaKeyInput = select("#research-exa-key", form);
+  const advancedToggle = select(".chat-advanced-toggle");
+  const advancedPanel = select("#research-advanced");
+  const clearChatBtn = select("[data-clear-chat]");
+
+  let chatHistory = [];
+
+  const scrollMessagesToBottom = () => {
+    if (!messagesEl) return;
+    messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: "smooth" });
+  };
+
+  const createMessageElement = (role, content, meta) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = `chat-message ${role}`;
+    const metaEl = document.createElement("div");
+    metaEl.className = "chat-meta";
+    metaEl.textContent = meta || (role === "user" ? "你" : "联脉 Agent");
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+
+    if (role === "bot") {
+      bubble.classList.add("markdown");
+      bubble.innerHTML = markdownToHTML(content);
+    } else if (role === "loading") {
+      bubble.innerHTML = '<span class="spinner mini" aria-hidden="true"></span> 正在生成...';
+    } else {
+      bubble.innerHTML = `<p>${escapeHTML(content)}</p>`;
+    }
+
+    wrapper.append(metaEl, bubble);
+    return wrapper;
+  };
+
+  const persistHistory = () => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ messages: chatHistory, provider: providerSelect?.value || "openai" })
+      );
+    } catch (error) {
+      console.warn("Failed to persist research chat history", error);
+    }
+  };
+
+  const appendMessage = (message, { save = true } = {}) => {
+    if (!messagesEl) return null;
+    const element = createMessageElement(message.role, message.content, message.meta);
+    messagesEl.appendChild(element);
+    if (save) {
+      chatHistory.push({ role: message.role, content: message.content, meta: message.meta });
+      persistHistory();
+    }
+    scrollMessagesToBottom();
+    return element;
+  };
+
+  const addLoadingMessage = () => {
+    if (!messagesEl) return null;
+    const element = createMessageElement("loading", "", "联脉 Agent");
+    element.dataset.loading = "true";
+    messagesEl.appendChild(element);
+    scrollMessagesToBottom();
+    return element;
+  };
+
+  const removeLoadingMessage = (element) => {
+    if (!element) return;
+    element.remove();
+  };
+
+  const buildPayload = (query) => {
+    const provider = (providerSelect?.value || "openai").toLowerCase();
+    const payload = { query, provider };
+
+    const model = modelInput?.value.trim();
+    if (model) payload.model = model;
+
+    const baseUrl = baseUrlInput?.value.trim();
+    if (baseUrl) payload.openai_base_url = baseUrl;
+
+    const exaKey = exaKeyInput?.value.trim();
+    if (exaKey) payload.exa_api_key = exaKey;
+
+    const providerKey = apiKeyInput?.value.trim();
+    if (providerKey) {
+      if (provider === "openai") payload.openai_api_key = providerKey;
+      if (provider === "anthropic") payload.anthropic_api_key = providerKey;
+      if (provider === "gemini") payload.gemini_api_key = providerKey;
+    }
+
+    return payload;
+  };
+
+  const restoreHistory = () => {
+    try {
+      const cachedRaw = sessionStorage.getItem(STORAGE_KEY);
+      if (!cachedRaw) return;
+      const cached = JSON.parse(cachedRaw);
+      chatHistory = Array.isArray(cached?.messages) ? cached.messages : [];
+      if (cached?.provider && providerSelect) {
+        providerSelect.value = cached.provider;
+      }
+      chatHistory.forEach((message) => appendMessage(message, { save: false }));
+      if (chatHistory.length) {
+        toast("已载入历史对话");
+      }
+    } catch (error) {
+      console.warn("Failed to restore research chat history", error);
+      chatHistory = [];
+    }
+  };
+
+  const clearChat = () => {
+    chatHistory = [];
+    persistHistory();
+    if (!messagesEl) return;
+    selectAll(".chat-message", messagesEl).forEach((messageEl) => {
+      if (messageEl.dataset.static === "true") return;
+      messageEl.remove();
+    });
+  };
+
+  const submitResearch = async (event) => {
+    event.preventDefault();
+    const query = queryInput?.value.trim();
+    if (!query) {
+      toast("请先填写查询内容");
+      return;
+    }
+
+    appendMessage({ role: "user", content: query, meta: "你" });
+    queryInput.value = "";
+
+    let payload;
+    try {
+      payload = buildPayload(query);
+    } catch (error) {
+      appendMessage({ role: "error", content: error.message, meta: "提示" });
+      return;
+    }
+
+    const apiBaseUrl = getApiBaseUrl();
+    if (!apiBaseUrl) {
+      appendMessage({ role: "error", content: "未配置后端地址，请联系管理员", meta: "系统" });
+      return;
+    }
+
+    trackEvent("research_submit", { provider: payload.provider });
+    const loadingMessage = addLoadingMessage();
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/research`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const isJSON = response.headers.get("content-type")?.includes("application/json");
+      const responseBody = isJSON ? await response.json() : await response.text();
+
+      if (!response.ok) {
+        const detail = typeof responseBody === "string" ? responseBody : responseBody?.detail;
+        throw new Error(detail || `请求失败（${response.status}）`);
+      }
+
+      const assistantMessage = {
+        role: "bot",
+        content: responseBody.result || "暂无内容",
+        meta: `${responseBody.provider || payload.provider} · ${responseBody.model || payload.model || "自动"}`,
+      };
+      appendMessage(assistantMessage);
+      trackEvent("research_success", {
+        provider: responseBody.provider,
+        model: responseBody.model,
+      });
+      toast("AI 背调完成");
+    } catch (error) {
+      console.error("research_submit_failed", error);
+      appendMessage({ role: "error", content: error.message, meta: "错误" });
+      trackEvent("research_error", {
+        provider: payload.provider,
+        reason: error.message,
+      });
+    } finally {
+      removeLoadingMessage(loadingMessage);
+    }
+  };
+
+  advancedToggle?.addEventListener("click", () => {
+    const expanded = advancedToggle.getAttribute("aria-expanded") === "true";
+    advancedToggle.setAttribute("aria-expanded", (!expanded).toString());
+    advancedPanel?.classList.toggle("hidden", expanded);
+  });
+
+  clearChatBtn?.addEventListener("click", () => {
+    clearChat();
+    toast("聊天记录已清空");
+  });
+
+  form.addEventListener("submit", submitResearch);
+
+  const syncProviderLabel = () => {
+    const label = select("label[for='research-api-key']", form);
+    if (!label || !providerSelect) return;
+    const selectedOption = providerSelect.options[providerSelect.selectedIndex];
+    const providerName = selectedOption?.textContent?.trim();
+    label.textContent = `${providerName || "Provider"} API Key（可选）`;
+  };
+
+  providerSelect?.addEventListener("change", syncProviderLabel);
+  syncProviderLabel();
+  restoreHistory();
+};
+
 const init = () => {
   applyABVariants();
   mobileNav();
@@ -324,6 +666,9 @@ const init = () => {
   heroForm();
   attachTrackers();
   faqTracker();
+  smoothScrollTriggers();
+  setFooterYear();
+  initResearchPage();
 };
 
 document.addEventListener("DOMContentLoaded", init);
