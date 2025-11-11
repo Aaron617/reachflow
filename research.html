@@ -16,7 +16,7 @@
     <link rel="icon" type="image/png" href="assets/icon.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body data-page="research" data-api-base-url="http://127.0.0.1:9000">
+  <body data-page="research" data-api-base-url="/api">
     <div class="page">
       <header class="site-header minimal">
         <div class="container header-inner">
@@ -155,7 +155,7 @@
     <script>
       window.__RESEARCH_CONFIG__ = window.__RESEARCH_CONFIG__ || {};
       window.__RESEARCH_CONFIG__.apiBaseUrl =
-        document.body.dataset.apiBaseUrl || window.__RESEARCH_CONFIG__.apiBaseUrl || "http://127.0.0.1:8000";
+        document.body.dataset.apiBaseUrl || window.__RESEARCH_CONFIG__.apiBaseUrl || "/api";
     </script>
     <script src="app.js" type="module"></script>
   </body>
