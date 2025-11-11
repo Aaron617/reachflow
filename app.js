@@ -646,7 +646,7 @@ const initResearchPage = () => {
 
     switch (type) {
       case "user_message":
-        addTimelineEntry("用户输入", data?.content || data?.query || queryInput?.value || "", { timestamp });
+        // 用户输入属于敏感信息，不在时间线中展示
         break;
       case "search_start":
         addTimelineEntry("搜索开始", data?.query || "Exa 搜索", { timestamp });
