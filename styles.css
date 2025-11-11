@@ -958,6 +958,18 @@ body[data-page="research"] .page {
   gap: 24px;
 }
 
+.chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+  gap: 24px;
+}
+
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -1135,6 +1147,99 @@ body[data-page="research"] .page {
   text-decoration: underline;
 }
 
+.chat-timeline {
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  border-radius: 24px;
+  padding: 20px;
+  background: rgba(248, 250, 252, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.timeline-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.timeline-hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.stream-status {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(107, 114, 128, 0.12);
+  color: var(--color-text-secondary);
+}
+
+.stream-status[data-status="active"] {
+  background: rgba(27, 191, 114, 0.15);
+  color: var(--color-secondary);
+}
+
+.stream-status[data-status="error"] {
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--color-error);
+}
+
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-entry {
+  border-radius: 16px;
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  background: #ffffff;
+  padding: 12px 14px;
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+}
+
+.timeline-entry .timeline-type {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.timeline-entry .timeline-time {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.timeline-entry .timeline-body {
+  margin: 0;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.timeline-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 1180px) {
   .header-inner {
     height: 64px;
@@ -1189,6 +1294,14 @@ body[data-page="research"] .page {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-timeline {
+    max-height: none;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -1229,6 +1342,10 @@ body[data-page="research"] .page {
 
   .chat-card {
     padding: 24px;
+  }
+
+  .chat-input-row .btn {
+    width: 100%;
   }
 }
 

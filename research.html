@@ -63,55 +63,81 @@
                 </div>
               </header>
 
-              <div class="chat-messages" id="chat-messages" aria-live="polite">
-                <div class="chat-message bot" data-static="true">
-                  <div class="chat-meta">系统提示</div>
-                  <div class="chat-bubble">
-                    <p>输入客户背景/公司信息/所需确认的问题，AI背调会返回可执行的 Markdown 报告。</p>
+              <div class="chat-layout">
+                <div class="chat-main">
+                  <div class="chat-messages" id="chat-messages" aria-live="polite">
+                    <div class="chat-message bot" data-static="true">
+                      <div class="chat-meta">系统提示</div>
+                      <div class="chat-bubble">
+                        <p>输入客户背景/公司信息/所需确认的问题, 我会返回可执行的 Markdown 报告。</p>
+                      </div>
+                    </div>
                   </div>
+
+                  <form id="research-form" class="chat-input" novalidate>
+                    <textarea
+                      id="research-query"
+                      name="query"
+                      rows="4"
+                      required
+                      placeholder="例：请评估 ABC Imports（德国慕尼黑）近 12 个月的舆情、核心联系人，以及可能的合规风险。"
+                    ></textarea>
+                    <div class="chat-input-row">
+                      <button type="submit" class="btn btn-primary" data-track="research_submit">发送</button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-stop-stream
+                        disabled
+                        data-track="research_stop_stream"
+                      >
+                        停止
+                      </button>
+                      <button type="button" class="btn btn-secondary" data-clear-chat data-track="research_clear_chat">
+                        清空记录
+                      </button>
+                    </div>
+
+                    <div class="research-advanced hidden" id="research-advanced">
+                      <div class="input-group">
+                        <label for="research-api-key">Provider API Key（可选）</label>
+                        <input
+                          type="password"
+                          id="research-api-key"
+                          name="apiKey"
+                          placeholder="留空使用后端默认配置"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="input-group">
+                        <label for="research-model">模型名称（可选）</label>
+                        <input type="text" id="research-model" name="model" placeholder="例如：gpt-4o-mini" />
+                      </div>
+                      <div class="input-group">
+                        <label for="research-base-url">OpenAI Base URL（可选）</label>
+                        <input type="url" id="research-base-url" name="openai_base_url" placeholder="如需自建代理" />
+                      </div>
+                      <div class="input-group">
+                        <label for="research-exa-key">EXA API Key（可选）</label>
+                        <input type="password" id="research-exa-key" name="exa_api_key" placeholder="覆盖后端默认 Key" />
+                      </div>
+                    </div>
+                  </form>
                 </div>
+
+                <aside class="chat-timeline" aria-live="polite">
+                  <div class="timeline-header">
+                    <div>
+                      <h2>研究日志</h2>
+                      <p class="timeline-hint">实时显示搜索、抓取与工具状态</p>
+                    </div>
+                    <span class="stream-status" id="stream-status" data-status="idle">待机</span>
+                  </div>
+                  <ol class="timeline-list" id="timeline-list">
+                    <li class="timeline-empty">暂无事件</li>
+                  </ol>
+                </aside>
               </div>
-
-              <form id="research-form" class="chat-input" novalidate>
-                <textarea
-                  id="research-query"
-                  name="query"
-                  rows="4"
-                  required
-                  placeholder="例：请帮我评估 ABC Imports（德国慕尼黑）近 12 个月的舆情、核心联系人，以及可能的合规风险。"
-                ></textarea>
-                <div class="chat-input-row">
-                  <button type="submit" class="btn btn-primary" data-track="research_submit">发送</button>
-                  <button type="button" class="btn btn-secondary" data-clear-chat data-track="research_clear_chat">
-                    清空记录
-                  </button>
-                </div>
-
-                <div class="research-advanced hidden" id="research-advanced">
-                  <div class="input-group">
-                    <label for="research-api-key">Provider API Key（可选）</label>
-                    <input
-                      type="password"
-                      id="research-api-key"
-                      name="apiKey"
-                      placeholder="留空使用后端默认配置"
-                      autocomplete="off"
-                    />
-                  </div>
-                  <div class="input-group">
-                    <label for="research-model">模型名称（可选）</label>
-                    <input type="text" id="research-model" name="model" placeholder="例如：gpt-4o-mini" />
-                  </div>
-                  <div class="input-group">
-                    <label for="research-base-url">OpenAI Base URL（可选）</label>
-                    <input type="url" id="research-base-url" name="openai_base_url" placeholder="如需自建代理" />
-                  </div>
-                  <div class="input-group">
-                    <label for="research-exa-key">EXA API Key（可选）</label>
-                    <input type="password" id="research-exa-key" name="exa_api_key" placeholder="覆盖后端默认 Key" />
-                  </div>
-                </div>
-              </form>
             </div>
           </div>
         </section>

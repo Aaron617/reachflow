@@ -437,6 +437,8 @@ const initResearchPage = () => {
   if (!form) return;
 
   const messagesEl = select("#chat-messages");
+  const timelineList = select("#timeline-list");
+  const streamStatusEl = select("#stream-status");
   const queryInput = select("#research-query", form);
   const providerSelect = select("#research-provider", form);
   const apiKeyInput = select("#research-api-key", form);
@@ -446,8 +448,13 @@ const initResearchPage = () => {
   const advancedToggle = select(".chat-advanced-toggle");
   const advancedPanel = select("#research-advanced");
   const clearChatBtn = select("[data-clear-chat]");
+  const stopStreamBtn = select("[data-stop-stream]");
+  const sendBtn = select("button[type='submit']", form);
 
   let chatHistory = [];
+  let assistantStream = { element: null, content: "", meta: "联脉 Agent" };
+  let streamAbortController = null;
+  let streamActive = false;
 
   const scrollMessagesToBottom = () => {
     if (!messagesEl) return;
@@ -466,10 +473,12 @@ const initResearchPage = () => {
     if (role === "bot") {
       bubble.classList.add("markdown");
       bubble.innerHTML = markdownToHTML(content);
-    } else if (role === "loading") {
-      bubble.innerHTML = '<span class="spinner mini" aria-hidden="true"></span> 正在生成...';
     } else {
       bubble.innerHTML = `<p>${escapeHTML(content)}</p>`;
+    }
+
+    if (role === "error") {
+      wrapper.classList.add("error");
     }
 
     wrapper.append(metaEl, bubble);
@@ -499,41 +508,284 @@ const initResearchPage = () => {
     return element;
   };
 
-  const addLoadingMessage = () => {
-    if (!messagesEl) return null;
-    const element = createMessageElement("loading", "", "联脉 Agent");
-    element.dataset.loading = "true";
-    messagesEl.appendChild(element);
+  const updateAssistantStream = (chunk = "", metaLabel) => {
+    if (!chunk) return;
+    if (!assistantStream.element) {
+      assistantStream = {
+        element: createMessageElement("bot", "", metaLabel || "联脉 Agent"),
+        content: "",
+        meta: metaLabel || "联脉 Agent",
+      };
+      assistantStream.element.dataset.streaming = "true";
+      messagesEl?.appendChild(assistantStream.element);
+      chatHistory.push({ role: "bot", content: "", meta: assistantStream.meta, streaming: true });
+    }
+    assistantStream.content += chunk;
+    const bubble = select(".chat-bubble", assistantStream.element);
+    if (bubble) {
+      bubble.classList.add("markdown");
+      bubble.innerHTML = markdownToHTML(assistantStream.content);
+    }
+    const last = chatHistory[chatHistory.length - 1];
+    if (last?.streaming) {
+      last.content = assistantStream.content;
+      persistHistory();
+    }
     scrollMessagesToBottom();
-    return element;
   };
 
-  const removeLoadingMessage = (element) => {
-    if (!element) return;
-    element.remove();
+  const finalizeAssistantStream = (finalText = "", metaLabel) => {
+    if (!assistantStream.element && finalText) {
+      appendMessage({ role: "bot", content: finalText, meta: metaLabel || "联脉 Agent" });
+      return;
+    }
+    if (!assistantStream.element) return;
+    const text = finalText || assistantStream.content;
+    if (text) {
+      const bubble = select(".chat-bubble", assistantStream.element);
+      if (bubble) bubble.innerHTML = markdownToHTML(text);
+    }
+    const last = chatHistory[chatHistory.length - 1];
+    if (last?.streaming) {
+      last.content = text;
+      delete last.streaming;
+      persistHistory();
+    }
+    assistantStream.element.dataset.streaming = "false";
+    assistantStream = { element: null, content: "", meta: metaLabel || "联脉 Agent" };
+  };
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return new Date().toLocaleTimeString("zh-CN", { hour12: false });
+    const ms = timestamp > 10_000_000_000 ? timestamp : timestamp * 1000;
+    return new Date(ms).toLocaleTimeString("zh-CN", { hour12: false });
+  };
+
+  const resetTimeline = () => {
+    if (!timelineList) return;
+    timelineList.innerHTML = '<li class="timeline-empty">暂无事件</li>';
+  };
+
+  const addTimelineEntry = (type, description, { html, timestamp } = {}) => {
+    if (!timelineList) return;
+    const emptyState = select(".timeline-empty", timelineList);
+    emptyState?.remove();
+    const item = document.createElement("li");
+    item.className = "timeline-entry";
+    item.innerHTML = `
+      <div class="timeline-type">${escapeHTML(type)}</div>
+      <div class="timeline-time">${formatTimestamp(timestamp)}</div>
+      <p class="timeline-body">${html ?? escapeHTML(description || "-")}</p>
+    `;
+    timelineList.appendChild(item);
+    timelineList.scrollTo({ top: timelineList.scrollHeight, behavior: "smooth" });
+  };
+
+  const setStreamStatus = (state, label) => {
+    if (!streamStatusEl) return;
+    streamStatusEl.dataset.status = state;
+    streamStatusEl.textContent = label;
+  };
+
+  const setStreamingState = (active) => {
+    streamActive = active;
+    sendBtn && (sendBtn.disabled = active);
+    stopStreamBtn && (stopStreamBtn.disabled = !active);
   };
 
   const buildPayload = (query) => {
     const provider = (providerSelect?.value || "openai").toLowerCase();
     const payload = { query, provider };
-
     const model = modelInput?.value.trim();
     if (model) payload.model = model;
-
     const baseUrl = baseUrlInput?.value.trim();
     if (baseUrl) payload.openai_base_url = baseUrl;
-
     const exaKey = exaKeyInput?.value.trim();
     if (exaKey) payload.exa_api_key = exaKey;
-
     const providerKey = apiKeyInput?.value.trim();
     if (providerKey) {
       if (provider === "openai") payload.openai_api_key = providerKey;
       if (provider === "anthropic") payload.anthropic_api_key = providerKey;
       if (provider === "gemini") payload.gemini_api_key = providerKey;
     }
-
     return payload;
+  };
+
+  const extractText = (data) => {
+    if (!data) return "";
+    if (typeof data === "string") return data;
+    if (typeof data.text === "string") return data.text;
+    if (typeof data.content === "string") return data.content;
+    if (Array.isArray(data.content)) {
+      return data.content
+        .map((part) => (typeof part === "string" ? part : part.text || part.content || ""))
+        .join("");
+    }
+    if (typeof data.result === "string") return data.result;
+    return "";
+  };
+
+  const formatResultsHTML = (results = []) => {
+    if (!Array.isArray(results) || !results.length) return escapeHTML("未返回结果");
+    const top = results.slice(0, 3);
+    const items = top
+      .map((item) => {
+        const title = escapeHTML(item.title || "结果");
+        const url = escapeHTML(item.url || "");
+        const snippet = escapeHTML(item.text || item.snippet || "");
+        return `<p><strong>${title}</strong><br /><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a><br />${snippet}</p>`;
+      })
+      .join("");
+    return items;
+  };
+
+  const handleStreamEvent = (rawType, payload) => {
+    const type = payload?.event || rawType || "message";
+    const data = payload?.data ?? payload;
+    const timestamp = payload?.timestamp ?? data?.timestamp;
+
+    switch (type) {
+      case "user_message":
+        addTimelineEntry("用户输入", data?.content || data?.query || queryInput?.value || "", { timestamp });
+        break;
+      case "search_start":
+        addTimelineEntry("搜索开始", data?.query || "Exa 搜索", { timestamp });
+        break;
+      case "search_results":
+        addTimelineEntry(
+          "搜索结果",
+          `${(data?.results?.length ?? 0).toString()} 条候选`,
+          { timestamp, html: formatResultsHTML(data?.results) }
+        );
+        break;
+      case "open_url_start":
+        addTimelineEntry("抓取网页", data?.url || "获取网页内容", { timestamp });
+        break;
+      case "open_url_result":
+        addTimelineEntry("抓取完成", data?.title || data?.url || "网页已解析", { timestamp });
+        break;
+      case "tool_result":
+        addTimelineEntry(data?.tool || "工具输出", data?.output || data?.message || "完成", { timestamp });
+        break;
+      case "assistant_message":
+        updateAssistantStream(extractText(data), data?.meta || data?.model || data?.provider);
+        break;
+      case "final":
+        finalizeAssistantStream(extractText(data) || data?.result, data?.meta);
+        addTimelineEntry("最终答案", "报告已生成", { timestamp });
+        setStreamStatus("active", "整理中");
+        break;
+      case "error":
+        finalizeAssistantStream();
+        setStreamStatus("error", "异常");
+        appendMessage({ role: "error", content: data?.message || data?.detail || "未知错误", meta: "错误" });
+        addTimelineEntry("错误", data?.message || data?.detail || "未知错误", { timestamp });
+        break;
+      case "ping":
+        setStreamStatus("active", "连接正常");
+        break;
+      case "done":
+      case "close":
+        finalizeAssistantStream();
+        setStreamStatus("idle", "已完成");
+        break;
+      default:
+        if (type !== "assistant_message") {
+          addTimelineEntry(type.replace(/_/g, " "), extractText(data) || JSON.stringify(data), { timestamp });
+        }
+    }
+  };
+
+  const handleSSEChunk = (chunk) => {
+    const lines = chunk.split("\n");
+    let eventType = "message";
+    let dataBuffer = "";
+    for (const line of lines) {
+      if (line.startsWith("event:")) eventType = line.slice(6).trim();
+      if (line.startsWith("data:")) dataBuffer += line.slice(5).trim();
+    }
+    if (!dataBuffer) return;
+    try {
+      const payload = JSON.parse(dataBuffer);
+      handleStreamEvent(eventType, payload);
+    } catch (error) {
+      console.warn("Failed to parse SSE chunk", chunk, error);
+    }
+  };
+
+  const closeActiveStream = (reasonLabel) => {
+    if (!streamAbortController) return;
+    streamAbortController.abort();
+    streamAbortController = null;
+    addTimelineEntry("连接中断", reasonLabel || "已停止流式输出");
+    setStreamStatus("idle", "已停止");
+    setStreamingState(false);
+  };
+
+  const startStream = async (payload) => {
+    const apiBaseUrl = getApiBaseUrl();
+    if (!apiBaseUrl) {
+      appendMessage({ role: "error", content: "未配置后端地址，请联系管理员", meta: "系统" });
+      return;
+    }
+
+    if (!window.ReadableStream) {
+      appendMessage({ role: "error", content: "当前浏览器不支持流式输出", meta: "提示" });
+      return;
+    }
+
+    streamAbortController = new AbortController();
+    setStreamingState(true);
+    setStreamStatus("active", "进行中");
+    resetTimeline();
+    addTimelineEntry("任务创建", payload.query);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/research/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: streamAbortController.signal,
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || `请求失败（${response.status}）`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("浏览器不支持流式读取");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let boundary;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const chunk = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          if (chunk.trim()) handleSSEChunk(chunk.trim());
+        }
+      }
+      if (buffer.trim()) handleSSEChunk(buffer.trim());
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("research_stream_failed", error);
+        appendMessage({ role: "error", content: error.message, meta: "错误" });
+        addTimelineEntry("错误", error.message);
+        setStreamStatus("error", "异常");
+        trackEvent("research_error", { provider: payload.provider, reason: error.message });
+      }
+    } finally {
+      finalizeAssistantStream();
+      streamAbortController = null;
+      setStreamingState(false);
+      if (streamStatusEl?.dataset.status !== "error") {
+        setStreamStatus("idle", "待机");
+      }
+    }
   };
 
   const restoreHistory = () => {
@@ -558,15 +810,22 @@ const initResearchPage = () => {
   const clearChat = () => {
     chatHistory = [];
     persistHistory();
-    if (!messagesEl) return;
-    selectAll(".chat-message", messagesEl).forEach((messageEl) => {
-      if (messageEl.dataset.static === "true") return;
-      messageEl.remove();
-    });
+    if (messagesEl) {
+      selectAll(".chat-message", messagesEl).forEach((messageEl) => {
+        if (messageEl.dataset.static === "true") return;
+        messageEl.remove();
+      });
+    }
+    resetTimeline();
+    assistantStream = { element: null, content: "", meta: "联脉 Agent" };
   };
 
-  const submitResearch = async (event) => {
+  const submitResearch = (event) => {
     event.preventDefault();
+    if (streamActive) {
+      toast("请先等待当前任务完成");
+      return;
+    }
     const query = queryInput?.value.trim();
     if (!query) {
       toast("请先填写查询内容");
@@ -584,50 +843,8 @@ const initResearchPage = () => {
       return;
     }
 
-    const apiBaseUrl = getApiBaseUrl();
-    if (!apiBaseUrl) {
-      appendMessage({ role: "error", content: "未配置后端地址，请联系管理员", meta: "系统" });
-      return;
-    }
-
     trackEvent("research_submit", { provider: payload.provider });
-    const loadingMessage = addLoadingMessage();
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/research`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const isJSON = response.headers.get("content-type")?.includes("application/json");
-      const responseBody = isJSON ? await response.json() : await response.text();
-
-      if (!response.ok) {
-        const detail = typeof responseBody === "string" ? responseBody : responseBody?.detail;
-        throw new Error(detail || `请求失败（${response.status}）`);
-      }
-
-      const assistantMessage = {
-        role: "bot",
-        content: responseBody.result || "暂无内容",
-        meta: `${responseBody.provider || payload.provider} · ${responseBody.model || payload.model || "自动"}`,
-      };
-      appendMessage(assistantMessage);
-      trackEvent("research_success", {
-        provider: responseBody.provider,
-        model: responseBody.model,
-      });
-      toast("AI 背调完成");
-    } catch (error) {
-      console.error("research_submit_failed", error);
-      appendMessage({ role: "error", content: error.message, meta: "错误" });
-      trackEvent("research_error", {
-        provider: payload.provider,
-        reason: error.message,
-      });
-    } finally {
-      removeLoadingMessage(loadingMessage);
-    }
+    startStream(payload);
   };
 
   advancedToggle?.addEventListener("click", () => {
@@ -637,9 +854,12 @@ const initResearchPage = () => {
   });
 
   clearChatBtn?.addEventListener("click", () => {
+    if (streamActive) closeActiveStream("已终止并清空");
     clearChat();
     toast("聊天记录已清空");
   });
+
+  stopStreamBtn?.addEventListener("click", () => closeActiveStream("手动停止"));
 
   form.addEventListener("submit", submitResearch);
 
@@ -653,7 +873,9 @@ const initResearchPage = () => {
 
   providerSelect?.addEventListener("change", syncProviderLabel);
   syncProviderLabel();
+  resetTimeline();
   restoreHistory();
+  setStreamStatus("idle", "待机");
 };
 
 const init = () => {
