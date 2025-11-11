@@ -683,6 +683,9 @@ const initResearchPage = () => {
       case "assistant_message":
         updateAssistantStream(extractText(data), data?.meta || data?.model || data?.provider);
         break;
+      case "log":
+        addTimelineEntry(data?.title || "日志", extractText(data) || data?.message || "-", { timestamp });
+        break;
       case "final":
         finalizeAssistantStream(extractText(data) || data?.result, data?.meta);
         addTimelineEntry("最终答案", "报告已生成", { timestamp });
@@ -754,9 +757,13 @@ const initResearchPage = () => {
     addTimelineEntry("任务创建", "已提交任务");
 
     try {
-      const response = await fetch(`${apiBaseUrl}/research`, {
+      const response = await fetch(`${apiBaseUrl}/research/stream`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
+        },
         body: JSON.stringify(payload),
         signal: streamAbortController.signal,
       });
@@ -764,6 +771,18 @@ const initResearchPage = () => {
       if (!response.ok) {
         const detail = await response.text();
         throw new Error(detail || `请求失败（${response.status}）`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/event-stream")) {
+        try {
+          const fallbackData = await response.json();
+          handleStreamEvent("final", fallbackData);
+          handleStreamEvent("done");
+        } catch (parseError) {
+          throw new Error("服务未返回流式数据");
+        }
+        return;
       }
 
       const reader = response.body?.getReader();
