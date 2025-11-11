@@ -639,15 +639,28 @@ const initResearchPage = () => {
     return items;
   };
 
+  const normalizeEventType = (value) => {
+    if (!value) return "";
+    return value.toString().trim().toLowerCase();
+  };
+
+  const isSensitiveUserEvent = (rawLabel) => {
+    const normalized = normalizeEventType(rawLabel);
+    if (!normalized && typeof rawLabel === "string") {
+      return rawLabel.trim() === "用户输入";
+    }
+    return ["user_message", "user_input", "userquery", "user"]
+      .some((key) => normalized === key);
+  };
+
   const handleStreamEvent = (rawType, payload) => {
     const type = payload?.event || rawType || "message";
+    if (isSensitiveUserEvent(type)) return;
+    const normalizedType = normalizeEventType(type) || "message";
     const data = payload?.data ?? payload;
     const timestamp = payload?.timestamp ?? data?.timestamp;
 
-    switch (type) {
-      case "user_message":
-        // 用户输入属于敏感信息，不在时间线中展示
-        break;
+    switch (normalizedType) {
       case "search_start":
         addTimelineEntry("搜索开始", data?.query || "Exa 搜索", { timestamp });
         break;
@@ -690,7 +703,7 @@ const initResearchPage = () => {
         setStreamStatus("idle", "已完成");
         break;
       default:
-        if (type !== "assistant_message") {
+        if (normalizedType !== "assistant_message") {
           addTimelineEntry(type.replace(/_/g, " "), extractText(data) || JSON.stringify(data), { timestamp });
         }
     }
@@ -738,7 +751,7 @@ const initResearchPage = () => {
     setStreamingState(true);
     setStreamStatus("active", "进行中");
     resetTimeline();
-    addTimelineEntry("任务创建", payload.query);
+    addTimelineEntry("任务创建", "已提交任务");
 
     try {
       const response = await fetch(`${apiBaseUrl}/research/stream`, {
