@@ -3,13 +3,13 @@
 > 适用：将 `research.html` + `app.js` 前端上传到服务器，面向内测用户提供 Research 服务前的自查指引。
 
 ## 结论速览
-- **可上线**：前端是纯静态页面，所有状态都保存在浏览器内存 / `sessionStorage`，天然支持多用户并发访问，只要后端 `/research/stream` 支持并发 SSE 即可。
+- **可上线**：前端是纯静态页面，所有状态都保存在浏览器内存 / `sessionStorage`，天然支持多用户并发访问，只要后端 `/research` 支持并发 SSE 即可。
 - **需配套**：仍需确认后端接入（API Base URL、鉴权、速率限制、日志脱敏）和运维（TLS、缓存、监控）。本文提供上线前 Checklist。
 
 ## 代码现状
 - `research.html`：通过 `<body data-api-base-url> + window.__RESEARCH_CONFIG__` 决定后端地址；静态资源可直接托管在任意 CDN / object storage。
 - `app.js`：
-  - `initResearchPage()`（约 430 行）封装全部交互；`startStream()` 使用 `fetch(${apiBaseUrl}/research/stream)` 建立 SSE 任务。
+  - `initResearchPage()`（约 430 行）封装全部交互；`startStream()` 使用 `fetch(${apiBaseUrl}/research)` 建立 SSE 任务。
   - `sessionStorage` 键 `reachflow_research_chat_history` 只在同一 Tab 生效，多用户互不干扰。
   - `user_message` 事件不会写入“研究日志”，避免在 UI 暴露 Prompt；“任务创建”也固定展示 “已提交任务”。
   - “停止”按钮通过 `AbortController` 关闭单个 Tab 的流式连接，不会影响其它用户。
@@ -17,7 +17,7 @@
 
 ## 多用户部署要点
 1. **API Base URL**：为不同环境（内网、灰度、生产）设置对应的 `data-api-base-url` 或在部署时动态注入 `window.__RESEARCH_CONFIG__.apiBaseUrl`。
-2. **SSE 并发**：确认 `/research/stream` 支持大量并发连接（每个用户一条），并设置适当的 `keep-alive` 与超时时间。
+2. **SSE 并发**：确认 `/research` 支持大量并发连接（每个用户一条），并设置适当的 `keep-alive` 与超时时间。
 3. **鉴权 & 限流**：前端目前未做登录；建议在上线版本前：
    - 通过反向代理限制访问源 IP（白名单）或在页面添加 Token 输入。
    - 后端按 IP / 用户标识做 QPS 限流，避免被滥用。
@@ -30,7 +30,7 @@
 ## 上线 Checklist
 - [ ] 配置后端地址（`data-api-base-url` 或运行时注入）。
 - [ ] 反向代理开启 HTTPS，设置 `Content-Security-Policy` 与 `Strict-Transport-Security`。
-- [ ] 校验 `/research/stream` CORS 允许页面域名，且响应头包含 `Content-Type: text/event-stream`、`Cache-Control: no-cache`。
+- [ ] 校验 `/research` CORS 允许页面域名，且响应头包含 `Content-Type: text/event-stream`、`Cache-Control: no-cache`。
 - [ ] 针对 `user_message` / Prompt 做日志脱敏；在 APM 中仅记录任务 ID。
 - [ ] 压测：至少模拟 50 个并发用户发起查询，确认后端 CPU / 内存 / SSE 句柄占用可控。
 - [ ] 观察超时、错误码，并验证前端 Toast / timeline 状态是否符合预期。

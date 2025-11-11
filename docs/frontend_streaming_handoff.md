@@ -1,9 +1,9 @@
 # Web 前端流式对接说明
 
-本文档面向前端同学，目标是把新的 `/research/stream` SSE 接口接入网页端，让用户像聊天一样实时看到 Deep Research Agent 的推理过程、搜索状态和最终答案。
+本文档面向前端同学，目标是把新的 `/research` SSE 接口接入网页端，让用户像聊天一样实时看到 Deep Research Agent 的推理过程、搜索状态和最终答案。
 
 ## 1. 后端接口概览
-- **URL**：`POST /research/stream`
+- **URL**：`POST /research`
 - **请求体**（JSON）：与原来的 `/research` 相同，如 `query`、`provider`、`model`、`openai_base_url` 等。
 - **响应**：`text/event-stream`。后端会持续推送事件，直到任务结束。
 - **事件类型**：
@@ -36,11 +36,11 @@
 ## 2. 前端接入建议
 ### 2.1 建立连接
 1. 用户在页面输入查询后，先把 form 数据存下来（query/provider/model 等）。
-2. 通过 `fetch('/research/stream', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } })` 发送一个 “kick-off” 请求，让后端创建任务（本接口直接返回 SSE，不需要额外的 task_id）。
+2. 通过 `fetch('/research', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } })` 发送一个 “kick-off” 请求，让后端创建任务（本接口直接返回 SSE，不需要额外的 task_id）。
 3. 为了持续接收事件，使用 `EventSource` 无法直接 POST，所以推荐使用以下方法之一：
    - **方案 A：自定义 fetch + ReadableStream**（现代浏览器支持）：
      ```js
-     const response = await fetch('/research/stream', {
+     const response = await fetch('/research', {
        method: 'POST',
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify(payload)
@@ -48,12 +48,12 @@
      const reader = response.body.getReader();
      // 按行解析 SSE
      ```
-   - **方案 B：后端增加 GET + querystring 版本**，前端先 POST （返回 task_id），再用 `EventSource('/research/stream?task=xxx')` 订阅。若短期只用 POST，就请采纳方案 A。
+   - **方案 B：后端增加 GET + querystring 版本**，前端先 POST （返回 task_id），再用 `EventSource('/research?task=xxx')` 订阅。若短期只用 POST，就请采纳方案 A。
 
 以下提供方案 A 的解析模板：
 ```js
 async function startStream(payload) {
-  const resp = await fetch('/research/stream', {
+  const resp = await fetch('/research', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)

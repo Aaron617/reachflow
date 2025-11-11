@@ -754,7 +754,7 @@ const initResearchPage = () => {
     addTimelineEntry("任务创建", "已提交任务");
 
     try {
-      const response = await fetch(`${apiBaseUrl}/research/stream`, {
+      const response = await fetch(`${apiBaseUrl}/research`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
